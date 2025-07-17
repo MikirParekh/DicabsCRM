@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/DICABS CRM.iml" filepath="$PROJECT_DIR$/.idea/DICABS CRM.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/dicabs.iml" filepath="$PROJECT_DIR$/.idea/dicabs.iml" />
     </modules>
   </component>
 </project>
