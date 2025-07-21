@@ -2,6 +2,7 @@
 
 import 'dart:ui';
 import 'dart:io' show Platform;
+import 'package:dicabs/core/show_log.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -15,7 +16,7 @@ import 'package:dicabs/customewidget/global_button.dart';
 import 'package:dicabs/customewidget/global_text_field.dart';
 import 'package:dicabs/screen/login/controller/login_controller.dart';
 import 'package:dicabs/validator/validator.dart';
-import 'package:dicabs/background_service.dart';
+import 'package:flutter/services.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -62,7 +63,8 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (permission == LocationPermission.deniedForever) {
       Fluttertoast.showToast(
-          msg: 'Location permission permanently denied. Please enable in settings.');
+          msg:
+              'Location permission permanently denied. Please enable in settings.');
       await openAppSettings();
       return false;
     }
@@ -72,7 +74,8 @@ class _LoginPageState extends State<LoginPage> {
       final backgroundStatus = await Permission.locationAlways.request();
       if (backgroundStatus.isDenied || backgroundStatus.isPermanentlyDenied) {
         Fluttertoast.showToast(
-            msg: 'Background location permission required. Please enable in settings.');
+            msg:
+                'Background location permission required. Please enable in settings.');
         await openAppSettings();
         return false;
       }
@@ -83,13 +86,21 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _requestBatteryOptimizationExemption() async {
     if (Platform.isAndroid) {
-      try {
-        const intent = AndroidIntent(
-          action: 'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
-        );
-        await intent.launch();
-      } catch (e) {
-        Fluttertoast.showToast(msg: 'Failed to open battery settings: $e');
+      const channel = MethodChannel('com.uniqtech.dicabs/battery_optimization');
+      final isBatteryOptimized =
+          await channel.invokeMethod<bool>('isBatteryOptimized');
+
+      showLog(msg: "isBatteryOptimized ----> $isBatteryOptimized");
+
+      if (isBatteryOptimized == true) {
+        try {
+          const intent = AndroidIntent(
+            action: 'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+          );
+          await intent.launch();
+        } catch (e) {
+          Fluttertoast.showToast(msg: 'Failed to open battery settings: $e');
+        }
       }
     }
   }
@@ -121,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                       Obx(
-                            () => GlobalTextFormField(
+                        () => GlobalTextFormField(
                           prefixIcon: const Icon(Iconsax.password_check),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -149,7 +160,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.redAccent),
+                              Icon(Icons.error_outline,
+                                  color: Colors.redAccent),
                               SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -169,8 +181,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 GlobalButton(
-                  fontSize: 18,
-                  text: "Login",
+                    fontSize: 18,
+                    text: "Login",
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         final success = await controller.loginUser();
@@ -179,7 +191,8 @@ class _LoginPageState extends State<LoginPage> {
                           setState(() => showError = false);
 
                           // Check and request permissions
-                          final permissionsGranted = await _checkAndRequestPermissions();
+                          final permissionsGranted =
+                              await _checkAndRequestPermissions();
                           if (!permissionsGranted) return;
 
                           // ✅ Request notification permission (REQUIRED for foreground service)
@@ -190,9 +203,11 @@ class _LoginPageState extends State<LoginPage> {
                           // Start background service
                           try {
                             // await initializeService();
-                            Fluttertoast.showToast(msg: 'Location tracking started');
+                            Fluttertoast.showToast(
+                                msg: 'Location tracking started');
                           } catch (e) {
-                            Fluttertoast.showToast(msg: 'Failed to start location tracking: $e');
+                            Fluttertoast.showToast(
+                                msg: 'Failed to start location tracking: $e');
                             return;
                           }
 
@@ -204,10 +219,10 @@ class _LoginPageState extends State<LoginPage> {
                             'dashboard',
                             extra: {
                               'userCode': controller.userCodeController.text,
-                              'salesCode': controller.passwordController.text, // Adjust if needed
+                              'salesCode': controller
+                                  .passwordController.text, // Adjust if needed
                             },
                           );
-
                         } else {
                           setState(() => showError = true);
                           Future.delayed(const Duration(seconds: 2), () {
@@ -215,9 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         }
                       }
-                    }
-
-                ),
+                    }),
               ],
             ),
           ),

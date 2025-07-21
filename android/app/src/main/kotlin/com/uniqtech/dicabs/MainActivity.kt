@@ -15,7 +15,9 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.embedding.engine.FlutterEngine
 import android.util.Log
-
+import android.content.Context
+import android.os.Build
+import android.os.PowerManager
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.uniqtech.dicabs/tracking"
@@ -38,6 +40,17 @@ class MainActivity : FlutterActivity() {
                     Log.d("MainActivity", "stopTracking method called")
                     stopTracking()
                     result.success(null)
+                }
+                "isBatteryOptimized" -> {
+                    Log.d("MainActivity", "Checking battery optimization")
+                    val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+                    val packageName = applicationContext.packageName
+                    val isOptimized = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        !pm.isIgnoringBatteryOptimizations(packageName)
+                    } else {
+                        false
+                    }
+                    result.success(isOptimized)
                 }
                 else -> {
                     Log.d("MainActivity", "Method not implemented: ${call.method}")

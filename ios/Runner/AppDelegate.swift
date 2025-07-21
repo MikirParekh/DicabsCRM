@@ -11,6 +11,10 @@ import UIKit
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
+    // MARK:Ensure engine is available for execution
+    // flutterEngineGroup = FlutterEngineGroup(name: "com.uniqtech.dicabs.engineGroup", project: nil)
+
+
     let controller = window?.rootViewController as! FlutterViewController
             let methodChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger)
 
@@ -29,6 +33,24 @@ import UIKit
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+
+// MARK:Bind background service with flutter engine
+//   private let dartEntrypoint = "startiOSLocationTracking"
+
+//   func start(notification: LNCDComputationNotification) {
+//     if engine == nil {
+//         let appDelegate = UIApplication.shared.delegate as! AppDelegate
+//         let engine = appDelegate.flutterEngineGroup.makeEngine(withEntrypoint: dartEntrypoint, libraryURI: nil)
+// 				engine.run()
+//     }
+      
+//     backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask(
+// 	    withName: backgroundTaskName, 
+//         expirationHandler: {
+//            self.stop()
+//     })
+//     lastNotification = notification
+//     }
 
   private func startTracking() {
           // Start location tracking

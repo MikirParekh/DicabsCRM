@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'approute/app_go_route.dart';
 import 'background_service.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -20,7 +19,13 @@ Future<void> main() async {
   // Lock orientation and launch app
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  await requestLocationPermissions();
   await initializeService();
+
+  // if (Platform.isIOS) {
+  //   showLog(msg: 'platform  iOS ----->> ${Platform.isIOS}');
+  //   startiOSLocationTracking();
+  // }
 
   runApp(const MyApp());
 }
