@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dicabs/ALLURL.dart';
 import 'package:dicabs/SharedPreference.dart';
+import 'package:dicabs/core/show_log.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dicabs/validator/validator.dart';
@@ -49,21 +50,21 @@ class LoginController extends GetxController {
       final isSuccess = jsonBody['Completed'] == true;
 
       if (isSuccess) {
-        print("Login Success: ${jsonBody['Message']}");
+        showLog(msg: "Login Success: ${jsonBody['Message']}");
 
         StorageManager.saveData('userCode', userCode);
 
-        final salesCode=jsonBody['Data']?['Code'];
-        if(salesCode!=null){
+        final salesCode = jsonBody['Data']?['Code'];
+        if (salesCode != null) {
           StorageManager.saveData('salesCode', salesCode);
         }
         return true;
       } else {
-        print("Login Failed: ${jsonBody['Message']}");
+        showLog(msg: "Login Failed: ${jsonBody['Message']}");
         return false;
       }
     } else {
-      print("Login Failed: ${response.reasonPhrase}");
+      showLog(msg: "Login Failed: ${response.reasonPhrase}");
       return false;
     }
   }

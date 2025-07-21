@@ -20,7 +20,7 @@ import android.os.Build
 import android.os.PowerManager
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.uniqtech.dicabs/tracking"
+    private val CHANNEL = "com.uniqtech.dicabs/AndroidChannel"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

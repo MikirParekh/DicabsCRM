@@ -1,5 +1,3 @@
-//LOCAL
-
 import 'dart:ui';
 import 'dart:io' show Platform;
 import 'package:dicabs/core/show_log.dart';
@@ -29,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final controller = Get.put(LoginController());
   bool showError = false;
+  bool isBatteryOptimized = false;
 
   @override
   void initState() {
@@ -84,23 +83,29 @@ class _LoginPageState extends State<LoginPage> {
     return true;
   }
 
+  Future<void> checkBatteryOptimization() async {
+    const channel = MethodChannel('com.uniqtech.dicabs/AndroidChannel');
+    final result = await channel.invokeMethod<bool>('isBatteryOptimized');
+
+    showLog(msg: "checkBatteryOptimization result ----> $result");
+
+    isBatteryOptimized = result ?? false;
+    showLog(msg: "isBatteryOptimized ----> $isBatteryOptimized");
+
+    if (isBatteryOptimized == false) {
+      _requestBatteryOptimizationExemption();
+    }
+  }
+
   Future<void> _requestBatteryOptimizationExemption() async {
     if (Platform.isAndroid) {
-      const channel = MethodChannel('com.uniqtech.dicabs/battery_optimization');
-      final isBatteryOptimized =
-          await channel.invokeMethod<bool>('isBatteryOptimized');
-
-      showLog(msg: "isBatteryOptimized ----> $isBatteryOptimized");
-
-      if (isBatteryOptimized == true) {
-        try {
-          const intent = AndroidIntent(
-            action: 'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
-          );
-          await intent.launch();
-        } catch (e) {
-          Fluttertoast.showToast(msg: 'Failed to open battery settings: $e');
-        }
+      try {
+        const intent = AndroidIntent(
+          action: 'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+        );
+        await intent.launch();
+      } catch (e) {
+        Fluttertoast.showToast(msg: 'Failed to open battery settings: $e');
       }
     }
   }
@@ -212,7 +217,9 @@ class _LoginPageState extends State<LoginPage> {
                           }
 
                           // Request battery optimization exemption
-                          await _requestBatteryOptimizationExemption();
+
+                          // await _requestBatteryOptimizationExemption();
+                          await checkBatteryOptimization();
 
                           // ✅ Navigate to dashboard
                           context.goNamed(
