@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dicabs/ALLURL.dart';
 import 'package:dicabs/SharedPreference.dart';
+import 'package:dicabs/background_service.dart';
 import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/service/secure_storage_service.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,9 @@ class LoginController extends GetxController {
 
         StorageManager.saveData('isLoggedIn', true);
         StorageManager.saveData('userCode', userCode);
+
+        // BAckground Service start on Login
+        await initializeService();
 
         final salesCode = jsonBody['Data']?['Code'];
         if (salesCode != null) {

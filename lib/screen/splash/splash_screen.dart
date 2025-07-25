@@ -17,9 +17,9 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
-  Future<void> initState() async {
+  initState() {
     super.initState();
-    await StorageManager.readData("isLoggedIn");
+    // await StorageManager.readData("isLoggedIn");
     navigateToNextScreen();
   }
 
@@ -40,7 +40,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (isUserLoggedIn == true) {
       if (!mounted) return;
       // _requestLocationPermission(context);
-      context.go(AppRoutes.dashboard);
+      Timer(const Duration(seconds: 2), () {
+        context.go(AppRoutes.dashboard);
+      });
     } else {
       Timer(const Duration(seconds: 2), () {
         context.go(AppRoutes.loginPage);

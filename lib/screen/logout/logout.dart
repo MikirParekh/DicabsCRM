@@ -1,6 +1,8 @@
 import 'package:dicabs/SharedPreference.dart';
+import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/screen/login/ui/login_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 class LogOutBox extends StatelessWidget {
   const LogOutBox({
@@ -22,6 +24,10 @@ class LogOutBox extends StatelessWidget {
             await StorageManager.deleteData("userCode"),
             await StorageManager.deleteData("salesCode"),
             StorageManager.saveData('isLoggedIn', false),
+
+            // Background Service stop on logout
+            await stopLocationService(),
+
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -32,4 +38,10 @@ class LogOutBox extends StatelessWidget {
       ],
     );
   }
+}
+
+Future<void> stopLocationService() async {
+  final service = FlutterBackgroundService();
+  service.invoke('stopService');
+  logRed(msg: "Background Service stoped");
 }

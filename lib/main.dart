@@ -20,7 +20,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await requestLocationPermissions();
-  await initializeService();
+  // await initializeService();
 
   // if (Platform.isIOS) {
   //   showLog(msg: 'platform  iOS ----->> ${Platform.isIOS}');

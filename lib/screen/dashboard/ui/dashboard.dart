@@ -135,7 +135,7 @@ class _DashboardScreenState extends State<Dashboard> {
           actions: [
             IconButton(
                 onPressed: () {
-                  //MARK: TODO:Logout
+                  //MARK: Logout
                   _showLogoutDialog(context);
                   logBlue(msg: "Log Out button pressed");
                 },
