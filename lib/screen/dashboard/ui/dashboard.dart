@@ -31,6 +31,7 @@ class _DashboardScreenState extends State<Dashboard> {
   String? selectedStatus;
   String? selectedSalesPerson;
   String? selectedDate;
+  bool isLoading = true;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -55,6 +56,7 @@ class _DashboardScreenState extends State<Dashboard> {
       setState(() {
         originalData = data;
         filteredData = data;
+        isLoading = false;
       });
     }
   }
@@ -148,16 +150,18 @@ class _DashboardScreenState extends State<Dashboard> {
         body: originalData.isEmpty
             // ? const Center(child: CircularProgressIndicator())
             ? Center(
-                child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/image/no_image.jpg'),
-                  const Text(
-                    "No Data Available",
-                    style: TextStyle(fontSize: 20),
-                  )
-                ],
-              ))
+                child: isLoading != true
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset('assets/image/no_image.jpg'),
+                          const Text(
+                            "No Data Available",
+                            style: TextStyle(fontSize: 20),
+                          )
+                        ],
+                      )
+                    : const CircularProgressIndicator())
             : Column(
                 children: [
                   Padding(
