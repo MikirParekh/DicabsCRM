@@ -219,7 +219,9 @@ class _LoginPageState extends State<LoginPage> {
                           // Request battery optimization exemption
 
                           // await _requestBatteryOptimizationExemption();
-                          await checkBatteryOptimization();
+                          // if (Platform.isAndroid) {
+                          //   await checkBatteryOptimization();
+                          // }
 
                           // ✅ Navigate to dashboard
                           context.goNamed(

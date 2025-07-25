@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dicabs/ALLURL.dart';
 import 'package:dicabs/SharedPreference.dart';
 import 'package:dicabs/core/show_log.dart';
+import 'package:dicabs/service/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dicabs/validator/validator.dart';
@@ -46,12 +47,14 @@ class LoginController extends GetxController {
     if (response.statusCode == 200) {
       final jsonBody = json.decode(response.body);
 
+      logGreen(msg: "loginUser response ---> $jsonBody");
       // Check if login is truly successful
       final isSuccess = jsonBody['Completed'] == true;
 
       if (isSuccess) {
         showLog(msg: "Login Success: ${jsonBody['Message']}");
 
+        StorageManager.saveData('isLoggedIn', true);
         StorageManager.saveData('userCode', userCode);
 
         final salesCode = jsonBody['Data']?['Code'];

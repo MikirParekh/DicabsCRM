@@ -3,7 +3,8 @@ import 'dart:io' show Platform;
 
 class SecureStorageService {
   // Singleton instance for global access
-  static final SecureStorageService _instance = SecureStorageService._internal();
+  static final SecureStorageService _instance =
+      SecureStorageService._internal();
 
   factory SecureStorageService() {
     return _instance;
@@ -23,7 +24,7 @@ class SecureStorageService {
   }
 
   // Create or Update value in storage
-  Future<void> writeData(String key, String value) async {
+  Future<void> writeData(String key, dynamic value) async {
     await _storage.write(key: key, value: value);
   }
 

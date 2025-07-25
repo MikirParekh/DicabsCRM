@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:dicabs/SharedPreference.dart';
 import 'package:dicabs/approute/routes.dart';
 import 'package:dicabs/core/media.dart';
-import 'package:dicabs/core/text.dart';
 import 'package:dicabs/service/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -16,27 +16,37 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
-  final SecureStorageService _storageService = SecureStorageService();
-
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
+    await StorageManager.readData("isLoggedIn");
     navigateToNextScreen();
   }
 
-  Future navigateToNextScreen() async{
-    var isUserLoggedIn = await _storageService.readData(DText.userId);
-    if(isUserLoggedIn != null  && isUserLoggedIn.isNotEmpty) {
-      if(!mounted) return;
-      _requestLocationPermission(context);
-    }else{
+  // Future navigateToNextScreen() async {
+  //   var isUserLoggedIn = await _storageService.readData(DText.userId);
+  //   if (isUserLoggedIn != null && isUserLoggedIn.isNotEmpty) {
+  //     if (!mounted) return;
+  //     _requestLocationPermission(context);
+  //   } else {
+  //     Timer(const Duration(seconds: 2), () {
+  //       context.go(AppRoutes.loginPage);
+  //     });
+  //   }
+  // }
+
+  Future navigateToNextScreen() async {
+    bool isUserLoggedIn = await StorageManager.readData("isLoggedIn") ?? false;
+    if (isUserLoggedIn == true) {
+      if (!mounted) return;
+      // _requestLocationPermission(context);
+      context.go(AppRoutes.dashboard);
+    } else {
       Timer(const Duration(seconds: 2), () {
         context.go(AppRoutes.loginPage);
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +79,7 @@ Future<void> _requestLocationPermission(BuildContext context) async {
     } else {
       context.go(AppRoutes.permissionPage);
     }
-  }else{
+  } else {
     context.go(AppRoutes.permissionPage);
   }
 }

@@ -19,16 +19,15 @@ final router = GoRouter(
     GoRoute(
       name: "splashPage",
       path: AppRoutes.splashPage,
-      builder: (context, state) =>
-          BlocProvider(
-            create: (_) => FormBloc(dataRepository)..add(LoadCategories()),
-            child: const SplashScreen(),
-          ),
+      builder: (context, state) => BlocProvider(
+        create: (_) => FormBloc(dataRepository)..add(LoadCategories()),
+        child: const SplashScreen(),
+      ),
     ),
     GoRoute(
       name: 'permissionPage',
       path: AppRoutes.permissionPage,
-      builder: (context, state) =>  PermissionPage(),
+      builder: (context, state) => const PermissionPage(),
     ),
     // GoRoute(
     //   name: 'dashboard',
@@ -50,7 +49,10 @@ final router = GoRouter(
     GoRoute(
       name: 'mainPage',
       path: AppRoutes.mainPage,
-      builder: (context, state) => MainPage(userCode: '', salesCode: '',),
+      builder: (context, state) => MainPage(
+        userCode: '',
+        salesCode: '',
+      ),
     ),
     GoRoute(
       name: 'loginPage',

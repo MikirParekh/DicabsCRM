@@ -1,3 +1,4 @@
+import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/customewidget/global_dropdown.dart';
 import 'package:dicabs/customewidget/global_text_field.dart';
 import 'package:dicabs/screen/mainpage/widgets/category_bottom_view.dart';
@@ -33,15 +34,15 @@ class _MainPageState extends State<MainPage> {
   final TextEditingController selectedContacts = TextEditingController();
   final TextEditingController selectedOpportunity = TextEditingController();
   final TextEditingController selectedTaskMember = TextEditingController();
-  List<AddActivityList> originalData=[];
-  List<AddActivityList> filteredData=[];
-  final MethodChannel platform = const MethodChannel('com.uniqtech.dicabs/tracking');
+  List<AddActivityList> originalData = [];
+  List<AddActivityList> filteredData = [];
+  final MethodChannel platform =
+      const MethodChannel('com.uniqtech.dicabs/tracking');
 
   bool isLoading = false;
-  List<String>selectedTaskMembers=[];
+  List<String> selectedTaskMembers = [];
 
   final MainPageRepository submit = MainPageRepository();
-
 
   Future<void> _startTracking() async {
     if (_validateForm()) {
@@ -58,7 +59,7 @@ class _MainPageState extends State<MainPage> {
           globalLatitude = position.latitude.toStringAsFixed(5);
           globalLongitude = position.longitude.toStringAsFixed(5);
         } catch (e) {
-          print("❌ Location fetch failed: $e");
+          showLog(msg: "❌ Location fetch failed: $e");
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Failed to get location")),
           );
@@ -67,7 +68,7 @@ class _MainPageState extends State<MainPage> {
         }
       }
 
-      print("📍 Sending Lat: $globalLatitude, Long: $globalLongitude");
+      showLog(msg: "📍 Sending Lat: $globalLatitude, Long: $globalLongitude");
 
       final model = AddActivityList(
         title: titleController.text.trim(),
@@ -87,7 +88,7 @@ class _MainPageState extends State<MainPage> {
         );
         Navigator.pop(context);
       } catch (error) {
-        print("❌ Submit error: $error");
+        logRed(msg: "❌ Submit error: $error");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Submit Failed')),
         );
@@ -100,7 +101,6 @@ class _MainPageState extends State<MainPage> {
       );
     }
   }
-
 
   bool _validateForm() {
     return titleController.text.isNotEmpty &&
@@ -201,14 +201,13 @@ class _MainPageState extends State<MainPage> {
       ),
       builder: (context) {
         return TaskMemberBottomView(
-            onTaskMemberSelected: (List<String>taskMembers){
-              setState(() {
-                selectedTaskMembers=taskMembers;
-                selectedTaskMember.text=taskMembers.join(',');
-              });
-              // Navigator.pop(context);
-            }
-        );
+            onTaskMemberSelected: (List<String> taskMembers) {
+          setState(() {
+            selectedTaskMembers = taskMembers;
+            selectedTaskMember.text = taskMembers.join(',');
+          });
+          // Navigator.pop(context);
+        });
       },
     );
   }
@@ -250,8 +249,9 @@ class _MainPageState extends State<MainPage> {
                               lastDate: DateTime(2101),
                             );
                             if (pickedDate != null) {
-                              dueDateController.text = DateFormat('yyyy-MM-dd HH:mm:ss').format(pickedDate);
-
+                              dueDateController.text =
+                                  DateFormat('yyyy-MM-dd HH:mm:ss')
+                                      .format(pickedDate);
                             }
                           },
                         ),
@@ -310,16 +310,21 @@ class _MainPageState extends State<MainPage> {
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: selectedTaskMembers.map((member){
+                              children: selectedTaskMembers.map((member) {
                                 return Chip(
                                   label: Text(member),
-                                  labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+                                  labelStyle: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: Colors.white),
                                   backgroundColor: Colors.blueAccent,
-                                  avatar: const Icon(Icons.person,color: Colors.white,size:18 ),
-                                  onDeleted: (){
+                                  avatar: const Icon(Icons.person,
+                                      color: Colors.white, size: 18),
+                                  onDeleted: () {
                                     setState(() {
                                       selectedTaskMembers.remove(member);
-                                      selectedTaskMember.text=selectedTaskMembers.join(',');
+                                      selectedTaskMember.text =
+                                          selectedTaskMembers.join(',');
                                     });
                                   },
                                 );
@@ -330,13 +335,13 @@ class _MainPageState extends State<MainPage> {
                       ],
                     ),
                   ),
-                  ),
+                ),
                 isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : GlobalButton(
-                  text: "Submit",
-                  onPressed: _startTracking,
-                ),
+                        text: "Submit",
+                        onPressed: _startTracking,
+                      ),
               ],
             ),
           ),
@@ -345,4 +350,3 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
-

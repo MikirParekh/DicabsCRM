@@ -29,7 +29,11 @@ class MainPageRepository {
     final url = Uri.parse(
         '$baseUrl/GetActivity?userCode=$userCode&salesCode=$salesCode');
 
+    showLog(msg: "fetchDeshboard ----> $url");
+
     final response = await http.get(url);
+
+    showLog(msg: "dashboard data response ----> ${response.body}");
 
     if (response.statusCode == 200) {
       final jsonBody = json.decode(response.body);
@@ -117,7 +121,7 @@ class MainPageRepository {
       "TaskTo": addActivityList.taskTo
     };
 
-    showLog(msg: "submitForm request body ------> $requestBody");
+    logBlue(msg: "submitForm request body ------> $requestBody");
 
     final headers = {'Content-Type': 'application/json'};
 
@@ -131,11 +135,12 @@ class MainPageRepository {
       body: jsonEncode(requestBody),
     );
 
-    showLog(msg: "submit form response ---> ${response.body}");
+    logGreen(msg: "submit form response ---> ${response.body}");
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
+      logRed(msg: "submit form error ---> ${response.body}");
       throw Exception('Failed to submit form: ${response.statusCode}');
     }
   }
@@ -159,7 +164,7 @@ class MainPageRepository {
     };
 
     try {
-      showLog(msg: "Post Location body -----> $body");
+      // showLog(msg: "Post Location body -----> ${jsonEncode(body)}");
 
       final response = await http.post(
         url,
@@ -167,7 +172,7 @@ class MainPageRepository {
         body: jsonEncode(body),
       );
 
-      showLog(msg: "post location response ---> ${response.body}");
+      // showLog(msg: "post location response ---> ${response.body}");
 
       if (response.statusCode == 200) {
         final responseJson = jsonDecode(response.body);

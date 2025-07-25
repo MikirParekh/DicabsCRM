@@ -21,9 +21,9 @@ Future<void> initializeService() async {
   // Step 1: Initialize Notification Plugin
   const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
   final iosSettings = DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
     onDidReceiveLocalNotification: (id, title, body, payload) async {
       // Optional: Handle iOS foreground notifications
     },
@@ -43,7 +43,8 @@ Future<void> initializeService() async {
           'location_tracking', // MUST match the channel ID used below
           'Location Tracking',
           description: 'Used for location tracking in foreground',
-          importance: Importance.high,
+          playSound: false,
+          importance: Importance.low,
         ),
       );
 
@@ -122,11 +123,11 @@ void onStart(ServiceInstance service) {
     });
   }
 
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
+  Timer.periodic(const Duration(minutes: 10), (timer) async {
     try {
       // 1️⃣ Read user code
       String? userCode = await StorageManager.readData('userCode');
-      showLog(msg: 'User Code in on start android: $userCode');
+      // showLog(msg: 'User Code in on start android: $userCode');
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
@@ -145,8 +146,8 @@ void onStart(ServiceInstance service) {
       //   desiredAccuracy: LocationAccuracy.best,
       // );
 
-      showLog(msg: "Position ----> latitude --> ${position.latitude}");
-      showLog(msg: "Position ----> longitude --> ${position.longitude}");
+      // showLog(msg: "Position ----> latitude --> ${position.latitude}");
+      // showLog(msg: "Position ----> longitude --> ${position.longitude}");
 
       globalLatitude = position.latitude.toStringAsFixed(5);
       globalLongitude = position.longitude.toStringAsFixed(5);
@@ -176,17 +177,20 @@ void onStart(ServiceInstance service) {
       // 4️⃣ Show notification
       await flutterLocalNotificationsPlugin.show(
         888,
-        '📍 Location Update',
-        '🗓️ $globalDate 🕒 $globalTime\n👤 Code: ${userCode ?? "N/A"}\n🌐 Lat: $globalLatitude | Long: $globalLongitude',
+        // '📍 Location Update',
+        // '🗓️ $globalDate 🕒 $globalTime\n👤 Code: ${userCode ?? "N/A"}\n🌐 Lat: $globalLatitude | Long: $globalLongitude',
+        "Location service on",
+        "",
         const NotificationDetails(
             android: AndroidNotificationDetails(
               'location_tracking',
               'Location Tracking',
               channelDescription:
                   'Used for live location updates in foreground',
-              importance: Importance.high,
-              priority: Priority.high,
+              importance: Importance.low,
+              priority: Priority.low,
               ongoing: true,
+              playSound: false,
               styleInformation: BigTextStyleInformation(''),
             ),
             iOS: DarwinNotificationDetails(
@@ -203,20 +207,20 @@ void onStart(ServiceInstance service) {
 
 @pragma('vm:entry-point')
 void startiOSLocationTracking() {
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
+  Timer.periodic(const Duration(minutes: 10), (timer) async {
     try {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final now = DateTime.now().toLocal();
+      // final now = DateTime.now().toLocal();
       final userCode = await StorageManager.readData('userCode');
       final latitude = position.latitude.toStringAsFixed(5);
       final longitude = position.longitude.toStringAsFixed(5);
-      final date =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      final time =
-          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+      // final date =
+      //     '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      // final time =
+      //     '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
 
       if (userCode != null) {
         await MainPageRepository.postLocation(
@@ -228,13 +232,15 @@ void startiOSLocationTracking() {
 
       await flutterLocalNotificationsPlugin.show(
         888,
-        '📍 iOS Location Update',
-        '🗓️ $date 🕒 $time\n👤 Code: ${userCode ?? "N/A"}\n🌐 Lat: $latitude | Long: $longitude',
+        // '📍 iOS Location Update',
+        // '🗓️ $date 🕒 $time\n👤 Code: ${userCode ?? "N/A"}\n🌐 Lat: $latitude | Long: $longitude',
+        "Location service on",
+        "",
         const NotificationDetails(
           iOS: DarwinNotificationDetails(
               presentAlert: true,
               presentBadge: true,
-              presentSound: true,
+              presentSound: false,
               presentList: true,
               presentBanner: true),
         ),
