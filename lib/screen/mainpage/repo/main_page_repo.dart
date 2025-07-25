@@ -3,6 +3,7 @@ import 'package:dicabs/ALLURL.dart';
 import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/screen/dashboard/model/dashboard_Model.dart';
 import 'package:dicabs/screen/mainpage/model/form_data_model.dart';
+import 'package:dicabs/screen/mainpage/model/opportunity_Model.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -71,16 +72,18 @@ class MainPageRepository {
     }
   }
 
-  Future<List<String>> fetchOpportunity() async {
+  Future<OpportunityList> fetchOpportunity() async {
     final url = Uri.parse('$baseUrl/GetRegarding');
 
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final jsonBody = json.decode(response.body);
-      final List<dynamic> data = jsonBody['Data'];
+      final res = json.decode(response.body);
 
-      return data.map((item) => item['No_'] as String).toList();
+      print("fetchOpportunity response -----> ${response.body}");
+
+      // return res;
+      return OpportunityList.fromJson(res);
     } else {
       throw Exception(
           'Failed to load Opportunity Data:${response.reasonPhrase}');

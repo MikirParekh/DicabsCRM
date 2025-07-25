@@ -1,3 +1,6 @@
+import 'package:dicabs/screen/mainpage/model/contact_Model.dart';
+import 'package:dicabs/screen/mainpage/model/opportunity_Model.dart'
+    as opp_data;
 import 'package:dicabs/screen/mainpage/repo/main_page_repo.dart';
 import 'package:flutter/material.dart';
 
@@ -14,8 +17,8 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
   final MainPageRepository repository = MainPageRepository();
   final TextEditingController _searchController = TextEditingController();
 
-  List<String> _allOpportunities = [];
-  List<String> _filteredOpportunities = [];
+  List<opp_data.Data> _allOpportunities = [];
+  List<opp_data.Data> _filteredOpportunities = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -30,8 +33,8 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
     try {
       final data = await repository.fetchOpportunity();
       setState(() {
-        _allOpportunities = data;
-        _filteredOpportunities = data;
+        _allOpportunities = data.data ?? [];
+        _filteredOpportunities = data.data ?? [];
         _isLoading = false;
       });
     } catch (e) {
@@ -46,7 +49,7 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredOpportunities = _allOpportunities
-          .where((item) => item.toLowerCase().contains(query))
+          .where((item) => item.no!.toLowerCase().contains(query))
           .toList();
     });
   }
@@ -102,7 +105,7 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search opportunities...',
+                  hintText: 'Search opportunity no...',
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -114,36 +117,48 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _errorMessage.isNotEmpty
-                    ? Center(child: Text('Error: $_errorMessage'))
-                    : _filteredOpportunities.isEmpty
-                    ? const Center(child: Text('No opportunity found.'))
-                    : ListView.builder(
-                  controller: scrollController,
-                  itemCount: _filteredOpportunities.length,
-                  itemBuilder: (context, index) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          _filteredOpportunities[index],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          widget.onOpportunitySelected(_filteredOpportunities[index]);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    );
-                  },
-                ),
+                        ? Center(child: Text('Error: $_errorMessage'))
+                        : _filteredOpportunities.isEmpty
+                            ? const Center(child: Text('No opportunity found.'))
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: _filteredOpportunities.length,
+                                itemBuilder: (context, index) {
+                                  return Card(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListTile(
+                                      title: Text(
+                                        _filteredOpportunities[index]
+                                                .searchName ??
+                                            '',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        _filteredOpportunities[index].no ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () {
+                                        widget.onOpportunitySelected(
+                                            _filteredOpportunities[index]
+                                                .toString());
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
               ),
             ],
           ),
