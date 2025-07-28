@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:dicabs/SharedPreference.dart';
 import 'package:dicabs/approute/routes.dart';
 import 'package:dicabs/core/media.dart';
-import 'package:dicabs/service/secure_storage_service.dart';
+import 'package:dicabs/core/show_log.dart';
+// import 'package:dicabs/service/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -40,10 +41,12 @@ class _SplashScreenState extends State<SplashScreen> {
     if (isUserLoggedIn == true) {
       if (!mounted) return;
       // _requestLocationPermission(context);
+      logGreen(msg: "isLoggedIn in splash if cond ----> $isUserLoggedIn");
       Timer(const Duration(seconds: 2), () {
         context.go(AppRoutes.dashboard);
       });
     } else {
+      logGreen(msg: "isLoggedIn in splash else cond ----> $isUserLoggedIn");
       Timer(const Duration(seconds: 2), () {
         context.go(AppRoutes.loginPage);
       });

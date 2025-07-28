@@ -52,10 +52,10 @@ class LoginController extends GetxController {
       // Check if login is truly successful
       final isSuccess = jsonBody['Completed'] == true;
 
+      StorageManager.saveData('isLoggedIn', true);
       if (isSuccess) {
         showLog(msg: "Login Success: ${jsonBody['Message']}");
 
-        StorageManager.saveData('isLoggedIn', true);
         StorageManager.saveData('userCode', userCode);
 
         // BAckground Service start on Login
