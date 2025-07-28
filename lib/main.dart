@@ -19,7 +19,7 @@ Future<void> main() async {
   // Lock orientation and launch app
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  await requestLocationPermissions();
+  // await requestLocationPermissions(); // now asking after login
   // await initializeService();
 
   // if (Platform.isIOS) {

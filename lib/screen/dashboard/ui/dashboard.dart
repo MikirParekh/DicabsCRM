@@ -11,10 +11,10 @@ class Dashboard extends StatefulWidget {
   final String salesCode;
 
   const Dashboard({
-    Key? key,
+    super.key,
     required this.userCode,
     required this.salesCode,
-  }) : super(key: key);
+  });
 
   @override
   State<Dashboard> createState() => _DashboardScreenState();
