@@ -1,4 +1,4 @@
-# dicabs
+# Dicabs CRM
 
 A new Flutter project.
 
