@@ -18,7 +18,7 @@ class _TaskMemberBottomViewState extends State<TaskMemberBottomView> {
   List<String> _filteredTaskMembers = [];
   bool _isLoading = true;
   String _errorMessage = '';
-  Set<String> _selectedMembers={};
+  Set<String> _selectedMembers = {};
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _TaskMemberBottomViewState extends State<TaskMemberBottomView> {
     super.dispose();
   }
 
-  void _submitSelection(){
+  void _submitSelection() {
     widget.onTaskMemberSelected(_selectedMembers.toList());
     Navigator.pop(context);
   }
@@ -120,60 +120,67 @@ class _TaskMemberBottomViewState extends State<TaskMemberBottomView> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _errorMessage.isNotEmpty
-                    ? Center(child: Text('Error: $_errorMessage'))
-                    : _filteredTaskMembers.isEmpty
-                    ? const Center(child: Text('No task member found.'))
-                    : ListView.builder(
-                  controller: scrollController,
-                  itemCount: _filteredTaskMembers.length,
-                  itemBuilder: (context, index) {
-                    final member=_filteredTaskMembers[index];
-                    final isSelected=_selectedMembers.contains(member);
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (selected){
-                          setState(() {
-                            if(selected==true){
-                              _selectedMembers.add(member);
-                            }else{
-                              _selectedMembers.remove(member);
-                            }
-                          });
-                        },
-                        title: Text(
-                          member,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      controlAffinity: ListTileControlAffinity.leading,
-
-                      ),
-                    );
-                  },
-                ),
+                        ? Center(child: Text('Error: $_errorMessage'))
+                        : _filteredTaskMembers.isEmpty
+                            ? const Center(child: Text('No task member found.'))
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: _filteredTaskMembers.length,
+                                itemBuilder: (context, index) {
+                                  final member = _filteredTaskMembers[index];
+                                  final isSelected =
+                                      _selectedMembers.contains(member);
+                                  return Card(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: CheckboxListTile(
+                                      value: isSelected,
+                                      onChanged: (selected) {
+                                        setState(() {
+                                          if (selected == true) {
+                                            _selectedMembers.add(member);
+                                          } else {
+                                            _selectedMembers.remove(member);
+                                          }
+                                        });
+                                      },
+                                      title: Text(
+                                        member,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                    ),
+                                  );
+                                },
+                              ),
               ),
-              if(_selectedMembers.isNotEmpty)
+              if (_selectedMembers.isNotEmpty)
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.check,color: Colors.white),
-                    label:const Text("Select",style: TextStyle(color: Colors.white,fontSize: 18,fontWeight: FontWeight.w600),),
+                  icon: const Icon(Icons.check, color: Colors.white),
+                  label: const Text(
+                    "Select",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600),
+                  ),
                   onPressed: _submitSelection,
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    )
-                  ),
-                    )
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      )),
+                )
             ],
           ),
         );
@@ -181,4 +188,3 @@ class _TaskMemberBottomViewState extends State<TaskMemberBottomView> {
     );
   }
 }
-

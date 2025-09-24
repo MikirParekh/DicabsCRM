@@ -1,4 +1,6 @@
+import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/screen/mainpage/repo/main_page_repo.dart';
+import 'package:dicabs/screen/mainpage/widgets/add_contact_bottom_view.dart';
 import 'package:flutter/material.dart';
 
 class ContactBottomView extends StatefulWidget {
@@ -29,6 +31,7 @@ class _ContactBottomViewState extends State<ContactBottomView> {
   void _loadContacts() async {
     try {
       final contacts = await repository.fetchContactDetails();
+      showLog(msg: "Contact list ----> $contacts");
       setState(() {
         _allContacts = contacts;
         _filteredContacts = contacts;
@@ -49,6 +52,27 @@ class _ContactBottomViewState extends State<ContactBottomView> {
           .where((contact) => contact.toLowerCase().contains(query))
           .toList();
     });
+  }
+
+  void _openAddContactBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            color: Colors.transparent,
+            child: GestureDetector(
+                onTap: () {
+                  showLog(msg: "Bottomsheet : Add Contact");
+                },
+                child: const AddContactBottomView()),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -88,15 +112,35 @@ class _ContactBottomViewState extends State<ContactBottomView> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Select Contacts',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Select Contacts',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => _openAddContactBottomSheet(),
+                    icon: const Row(
+                      children: [
+                        Icon(Icons.add),
+                        Text("Add",
+                            style: TextStyle(
+                              fontSize: 16,
+                            ))
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                      onPressed: () => _loadContacts(),
+                      icon: const Icon(Icons.refresh)),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
@@ -114,36 +158,38 @@ class _ContactBottomViewState extends State<ContactBottomView> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _errorMessage.isNotEmpty
-                    ? Center(child: Text('Error: $_errorMessage'))
-                    : _filteredContacts.isEmpty
-                    ? const Center(child: Text('No contacts found.'))
-                    : ListView.builder(
-                  controller: scrollController,
-                  itemCount: _filteredContacts.length,
-                  itemBuilder: (context, index) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          _filteredContacts[index],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          widget.onContactSelected(_filteredContacts[index]);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    );
-                  },
-                ),
+                        ? Center(child: Text('Error: $_errorMessage'))
+                        : _filteredContacts.isEmpty
+                            ? const Center(child: Text('No contacts found.'))
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: _filteredContacts.length,
+                                itemBuilder: (context, index) {
+                                  return Card(
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 6),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListTile(
+                                      title: Text(
+                                        _filteredContacts[index],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      trailing: const Icon(Icons.chevron_right),
+                                      onTap: () {
+                                        widget.onContactSelected(
+                                            _filteredContacts[index]);
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
               ),
             ],
           ),
@@ -152,4 +198,3 @@ class _ContactBottomViewState extends State<ContactBottomView> {
     );
   }
 }
-

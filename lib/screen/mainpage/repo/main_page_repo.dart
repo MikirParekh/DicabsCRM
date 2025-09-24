@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dicabs/ALLURL.dart';
+import 'package:dicabs/SharedPreference.dart';
 import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/screen/dashboard/model/dashboard_Model.dart';
+import 'package:dicabs/screen/mainpage/model/add_contact_model.dart';
 import 'package:dicabs/screen/mainpage/model/form_data_model.dart';
 import 'package:dicabs/screen/mainpage/model/opportunity_Model.dart';
 import 'package:http/http.dart' as http;
@@ -80,7 +83,7 @@ class MainPageRepository {
     if (response.statusCode == 200) {
       final res = json.decode(response.body);
 
-      print("fetchOpportunity response -----> ${response.body}");
+      showLog(msg: "fetchOpportunity response -----> ${response.body}");
 
       // return res;
       return OpportunityList.fromJson(res);
@@ -111,8 +114,12 @@ class MainPageRepository {
     }
   }
 
-  Future<Map<String, dynamic>> submitForm(AddActivityList addActivityList,
-      String userCode, String salesCode) async {
+  Future<Map<String, dynamic>> submitForm(
+    AddActivityList addActivityList,
+    String userCode,
+    String salesCode,
+    List<File> selectedFiles,
+  ) async {
     final requestBody = {
       "Title": addActivityList.title,
       "EndDate": addActivityList.endDate,
@@ -140,8 +147,27 @@ class MainPageRepository {
 
     logGreen(msg: "submit form response ---> ${response.body}");
 
+    final userCODE = await StorageManager.readData("userCode");
+
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+//sample response
+//       {
+//     "Data": 9477, ---> parse this in doc api
+//     "Message": "Activity added successfully.",
+//     "Completed": true
+
+      showLog(msg: "submit form response ---> ${response.body}");
+
+      var data = jsonDecode(response.body);
+
+// }
+
+      var uploadFileResponse = await uploadFile(
+          taskid: data['Data'].toString(),
+          userCode: userCODE,
+          selectedFiles: selectedFiles);
+
+      return jsonDecode(uploadFileResponse);
     } else {
       logRed(msg: "submit form error ---> ${response.body}");
       throw Exception('Failed to submit form: ${response.statusCode}');
@@ -187,6 +213,117 @@ class MainPageRepository {
     } catch (e) {
       showLog(msg: 'Error: $e');
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> addNewContact(
+      AddContactModel addContactModel) async {
+    try {
+      final requestBody = {
+        "companyName": addContactModel.companyName,
+        "contactName": addContactModel.contactName,
+        "phone": addContactModel.phone,
+        "mobile": addContactModel.mobile,
+        "email": addContactModel.email,
+      };
+
+      logGreen(msg: "addContact request body ------> $requestBody");
+
+      final headers = {'Content-Type': 'application/json'};
+
+      final url = Uri.parse('$baseUrl/');
+
+      showLog(msg: "$baseUrl/"); //TODO: need to change api endpoint
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        logRed(msg: "add contact error ---> ${response.body}");
+        throw Exception('Failed to addContact ${response.statusCode}');
+      }
+    } catch (e) {
+      logRed(msg: "add contact error ---> $e");
+      throw Exception('Failed to addContact $e');
+    }
+  }
+
+  // TODO: need to implement proper logic
+  /// upload file
+  ///
+  ///
+  /// TODO: Max 5 files
+  ///
+  ///
+  Future<String> uploadFile({
+    required String taskid,
+    required String userCode,
+    required List<File> selectedFiles,
+  }) async {
+    try {
+      // Construct the URL with the activityId
+      var url = Uri.parse('http://192.168.3.50:89/api/Home/v1/uploadmultiple');
+      // var url = Uri.parse('$baseUrl/uploadmultiple');
+      showLog(msg: "url ---> $url");
+
+      var request = http.MultipartRequest('POST', url);
+
+      request.fields['taskID'] = taskid;
+      request.fields['userCode'] = userCode;
+
+      // Add files to the request
+      for (var i = 0; i < selectedFiles.length; i++) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            "files", // The field name for the file on the server
+            selectedFiles[i].path,
+            filename: selectedFiles[i]
+                .path
+                .split('/')
+                .last, // Get file name from path
+          ),
+        );
+      }
+
+      for (var file in selectedFiles) {
+        final fileSizeBytes = await file.length();
+        final fileSizeMB = (fileSizeBytes / (1024 * 1024))
+            .toStringAsFixed(2); // 2 decimal places
+        showLog(
+            msg:
+                "Preparing to upload ${file.path.split('/').last} ($fileSizeMB MB)");
+      }
+
+      for (var f in request.files) {
+        showLog(msg: "Added file -> ${f.filename}, length: ${f.length}");
+      }
+
+      showLog(msg: "upload file request fields ---> ${request.fields}");
+      showLog(
+          msg:
+              "upload file request files ---> ${request.files.map((e) => e.filename)}");
+
+      showLog(msg: "upload file request body ---> ${request.fields}");
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+      showLog(
+          msg: "upload file response status code ---> ${response.statusCode}");
+      showLog(msg: "upload file response body ---> $responseBody");
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to upload files: ${response.statusCode} - $responseBody');
+      }
+
+      return responseBody;
+    } catch (e) {
+      showLog(msg: "Error uploading file: $e");
+      throw Exception('Failed to upload files: $e');
     }
   }
 }

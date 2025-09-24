@@ -1,4 +1,4 @@
-import 'package:dicabs/screen/mainpage/model/contact_Model.dart';
+import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/screen/mainpage/model/opportunity_Model.dart'
     as opp_data;
 import 'package:dicabs/screen/mainpage/repo/main_page_repo.dart';
@@ -49,7 +49,9 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredOpportunities = _allOpportunities
-          .where((item) => item.no!.toLowerCase().contains(query))
+          .where((item) =>
+              item.no!.toLowerCase().contains(query) ||
+              item.searchName!.toLowerCase().contains(query))
           .toList();
     });
   }
@@ -132,30 +134,35 @@ class _OpportunityBottomViewState extends State<OpportunityBottomView> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: ListTile(
-                                      title: Text(
-                                        _filteredOpportunities[index]
-                                                .searchName ??
-                                            '',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
+                                        title: Text(
+                                          _filteredOpportunities[index]
+                                                  .searchName ??
+                                              '',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                      subtitle: Text(
-                                        _filteredOpportunities[index].no ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
+                                        subtitle: Text(
+                                          _filteredOpportunities[index].no ??
+                                              '',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                      trailing: const Icon(Icons.chevron_right),
-                                      onTap: () {
-                                        widget.onOpportunitySelected(
-                                            _filteredOpportunities[index]
-                                                .toString());
-                                        Navigator.pop(context);
-                                      },
-                                    ),
+                                        trailing:
+                                            const Icon(Icons.chevron_right),
+                                        onTap: () {
+                                          final selected =
+                                              _filteredOpportunities[index];
+                                          widget.onOpportunitySelected(
+                                              selected.searchName ?? "");
+                                          showLog(
+                                              msg:
+                                                  "Selected Opportunity: ${selected.searchName}");
+                                          Navigator.pop(context);
+                                        }),
                                   );
                                 },
                               ),

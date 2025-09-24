@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bloc/bloc.dart';
 import 'package:dicabs/screen/mainpage/model/form_data_model.dart';
 import 'package:dicabs/screen/mainpage/repo/main_page_repo.dart';
@@ -9,7 +11,7 @@ part 'form_state.dart';
 
 class FormBloc extends Bloc<FormEvent, FormState> {
   final MainPageRepository dataRepository;
-    FormBloc(this.dataRepository) : super(FormInitial()) {
+  FormBloc(this.dataRepository) : super(FormInitial()) {
     on<LoadCategories>((event, emit) async {
       emit(FormLoading());
       try {
@@ -23,7 +25,8 @@ class FormBloc extends Bloc<FormEvent, FormState> {
     on<SubmitForm>((event, emit) async {
       emit(FormLoading());
       try {
-        await dataRepository.submitForm(event.formData,event.userCode,event.salesCode);
+        await dataRepository.submitForm(event.formData, event.userCode,
+            event.salesCode, event.selectedFiles);
         emit(FormSubmissionSuccess());
       } catch (e) {
         emit(FormSubmissionFailure(e.toString()));

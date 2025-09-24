@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/customewidget/global_dropdown.dart';
 import 'package:dicabs/customewidget/global_text_field.dart';
 import 'package:dicabs/screen/mainpage/widgets/category_bottom_view.dart';
+import 'package:dotted_border/dotted_border.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../customewidget/global_button.dart';
 import '../../../global_location.dart';
 import '../model/form_data_model.dart';
@@ -41,6 +46,7 @@ class _MainPageState extends State<MainPage> {
 
   bool isLoading = false;
   List<String> selectedTaskMembers = [];
+  List<File> selectedFiles = []; // New list to store selected files
 
   final MainPageRepository submit = MainPageRepository();
 
@@ -82,22 +88,32 @@ class _MainPageState extends State<MainPage> {
       );
 
       try {
-        await submit.submitForm(model, widget.userCode, widget.salesCode);
+        await submit.submitForm(
+            model, widget.userCode, widget.salesCode, selectedFiles);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Submit Successful')),
+          const SnackBar(
+            content: Text('Submit Successful'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       } catch (error) {
         logRed(msg: "❌ Submit error: $error");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Submit Failed')),
+          const SnackBar(
+            content: Text('Submit Failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       } finally {
         setState(() => isLoading = false);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
+        const SnackBar(
+          content: Text("Please fill all required fields"),
+          backgroundColor: Colors.amber,
+        ),
       );
     }
   }
@@ -181,6 +197,9 @@ class _MainPageState extends State<MainPage> {
                 onOpportunitySelected: (opportunity) {
                   setState(() {
                     selectedOpportunity.text = opportunity;
+                    showLog(
+                        msg:
+                            "Selected Opportunity: ${selectedOpportunity.text}");
                   });
                 },
               ),
@@ -195,7 +214,7 @@ class _MainPageState extends State<MainPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      // backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
@@ -212,13 +231,198 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+// --- File Selection and Processing ---
+  Future<void> _handleFileSelection() async {
+    // 1. Pick files
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      withData: true, // Necessary to get bytes for cloud files
+      type: FileType.custom,
+      allowedExtensions: [
+        // Images
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+
+        // Documents
+        'pdf', 'doc', 'docx', 'txt', 'rtf',
+
+        // Excel
+        'xls', 'xlsx'
+      ],
+    );
+
+    if (result == null) {
+      showLog(msg: "User canceled the picker.");
+      return;
+    }
+
+    // 🔹 Check max file limit (5)
+    if (result.files.length > 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You can only select up to 5 files.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Stop processing
+    }
+
+    // 2. Process the results and convert to File objects
+    selectedFiles = await _processFileFilePickerResult(result);
+
+    // 3. Now you have a list of usable File objects for upload
+    showLog(msg: "Number of files ready for upload: ${selectedFiles.length}");
+    for (var file in selectedFiles) {
+      showLog(msg: "File path: ${file.path}");
+    }
+    setState(() {});
+  }
+
+  ///upload document
+  // Future<void> _uploadDocument() async {
+  //   try {
+  //     await submit.uploadFile(
+  //         taskid: "9504", userCode: "1053", selectedFiles: selectedFiles);
+  //   } catch (e) {
+  //     showLog(msg: "Error uploading document: $e");
+  //   }
+  // }
+
+  /// Upload document
+  Future<void> _uploadDocument() async {
+    try {
+      // 🔹 Extra safeguard: limit max 5 files
+      if (selectedFiles.length > 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You can upload a maximum of 5 files only.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        showLog(msg: "Upload blocked: more than 5 files selected.");
+        return; // ❌ stop upload
+      }
+
+      if (selectedFiles.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select at least one file to upload.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        showLog(msg: "Upload blocked: no files selected.");
+        return;
+      }
+
+      // ✅ Proceed with upload
+      await submit.uploadFile(
+        taskid: "9504",
+        userCode: "1053",
+        selectedFiles: selectedFiles,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Files uploaded successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      showLog(msg: "Error uploading document: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading document: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Converts FilePickerResult to a List<File>, handling cloud files by saving them temporarily.
+  Future<List<File>> _processFileFilePickerResult(
+      FilePickerResult result) async {
+    const int maxFileSize = 5 * 1024 * 1024; // 10 MB in bytes
+    List<File> processedFiles = [];
+    List<String> skippedFiles = [];
+    const int maxFileCount = 5;
+
+    if (result.files.length > maxFileCount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'You can select a maximum of 5 files. Only the first 5 will be processed.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      showLog(
+          msg: "User selected more than 5 files, only first 5 will be used.");
+    }
+
+    // 🔹 Take only first 5 files
+    final limitedFiles = result.files.take(maxFileCount).toList();
+
+    for (PlatformFile platformFile in limitedFiles) {
+      File file;
+
+      if (platformFile.path != null) {
+        // --- Case 1: File has a local path (most common scenario) ---
+        file = File(platformFile.path!);
+      } else {
+        if (platformFile.bytes == null) {
+          showLog(
+              msg: "Skipping file ${platformFile.name}: No bytes available.");
+          skippedFiles.add(platformFile.name);
+          continue;
+        }
+
+        // --- Case 2: File path is null (common for cloud files or web) ---
+        // Read bytes and write to a temporary file.
+        showLog(
+            msg:
+                "File path was null. Reading from bytes and creating temporary file.");
+        final tempDir = await getTemporaryDirectory();
+        file = File('${tempDir.path}/${platformFile.name}');
+
+        try {
+          await file.writeAsBytes(platformFile.bytes!);
+        } catch (e) {
+          showLog(msg: "Error writing temporary file: $e");
+          continue; // Skip this file if writing fails
+        }
+      }
+
+      // Check file size
+      if (await file.length() > maxFileSize) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File Must be less than 5MB'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        showLog(msg: "Skipping file ${platformFile.name}: Size exceeds 5MB.");
+        skippedFiles.add(platformFile.name);
+        continue;
+      }
+
+      processedFiles.add(file);
+    }
+
+    return processedFiles;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize selectedTaskMember.text if needed, e.g., from a saved state
+    selectedTaskMember.text = selectedTaskMembers.join(',');
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("  Add Activity"),
+          title: const Text("Add Activity"),
           backgroundColor: Colors.blueAccent,
           foregroundColor: Colors.white,
         ),
@@ -248,10 +452,40 @@ class _MainPageState extends State<MainPage> {
                               firstDate: DateTime(2000),
                               lastDate: DateTime(2101),
                             );
+                            // if (pickedDate != null) {
+                            //   dueDateController.text =
+                            //       DateFormat('yyyy-MM-dd HH:mm:ss')
+                            //           .format(pickedDate);
+
+                            //   showLog(
+                            //       msg:
+                            //           "Current date time ---> ${DateTime.now()}");
+                            //   showLog(
+                            //       msg:
+                            //           "Selected Date: ${dueDateController.text}");
+                            // }
+
                             if (pickedDate != null) {
+                              final now = DateTime.now();
+
+                              // Combine selected date with current time
+                              final selectedDateTime = DateTime(
+                                pickedDate.year,
+                                pickedDate.month,
+                                pickedDate.day,
+                                now.hour,
+                                now.minute,
+                                now.second,
+                              );
+
                               dueDateController.text =
                                   DateFormat('yyyy-MM-dd HH:mm:ss')
-                                      .format(pickedDate);
+                                      .format(selectedDateTime);
+
+                              showLog(msg: "Current date time ---> $now");
+                              showLog(
+                                  msg:
+                                      "Selected DateTime: ${dueDateController.text}");
                             }
                           },
                         ),
@@ -331,7 +565,92 @@ class _MainPageState extends State<MainPage> {
                               }).toList(),
                             )
                           ],
-                        )
+                        ),
+                        const Gap(8),
+
+                        if (selectedFiles.isNotEmpty) ...[
+                          const Gap(16),
+                          Text(
+                            "Selected Files:",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const Gap(8),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: selectedFiles.length,
+                            itemBuilder: (context, index) {
+                              final file = selectedFiles[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  leading: const Icon(Icons.insert_drive_file),
+                                  title: Text(file.path.split('/').last),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () {
+                                      setState(
+                                          () => selectedFiles.removeAt(index));
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const Gap(8),
+                        ],
+
+                        // file selection -- doted box
+                        GestureDetector(
+                          onTap: () async {
+                            showLog(msg: "file picker");
+                            await _handleFileSelection();
+                          }, // Trigger the callback function provided.
+                          child: DottedBorder(
+                            options: const RoundedRectDottedBorderOptions(
+                                radius: Radius.circular(12)),
+                            child: Container(
+                              width:
+                                  double.infinity, // Take full available width.
+                              height: 150, // Fixed height for the container.
+                              decoration: BoxDecoration(
+                                // color: Colors.grey[
+                                //     100], // Light background color for the drop zone.
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.cloud_upload_outlined,
+                                    size: 50,
+                                    color: Colors.blue[700],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    "Tap to select a document",
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Max file size: 5MB",
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const Gap(8),
                       ],
                     ),
                   ),
@@ -341,6 +660,7 @@ class _MainPageState extends State<MainPage> {
                     : GlobalButton(
                         text: "Submit",
                         onPressed: _startTracking,
+                        // onPressed: _uploadDocument,
                       ),
               ],
             ),
