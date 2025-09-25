@@ -267,8 +267,8 @@ class MainPageRepository {
   }) async {
     try {
       // Construct the URL with the activityId
-      var url = Uri.parse('http://192.168.3.50:89/api/Home/v1/uploadmultiple');
-      // var url = Uri.parse('$baseUrl/uploadmultiple');
+      // var url = Uri.parse('http://192.168.3.50:89/api/Home/v1/uploadmultiple');
+      var url = Uri.parse('$baseUrl/uploadmultiple');
       showLog(msg: "url ---> $url");
 
       var request = http.MultipartRequest('POST', url);

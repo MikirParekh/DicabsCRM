@@ -101,6 +101,8 @@ class _MainPageState extends State<MainPage> {
             backgroundColor: Colors.green,
           ),
         );
+        selectedFiles.clear();
+        imageController.capturedImages.clear();
         Navigator.pop(context);
       } catch (error) {
         logRed(msg: "❌ Submit error: $error");
@@ -111,6 +113,8 @@ class _MainPageState extends State<MainPage> {
           ),
         );
       } finally {
+        selectedFiles.clear();
+        imageController.capturedImages.clear();
         setState(() => isLoading = false);
       }
     } else {
@@ -473,462 +477,561 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Add Activity"),
-          backgroundColor: Colors.blueAccent,
-          foregroundColor: Colors.white,
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GlobalTextFormField(
-                          labelText: 'Subject',
-                          controller: titleController,
-                          keyboardType: TextInputType.text,
-                        ),
-                        GlobalTextFormField(
-                          labelText: 'Due Date',
-                          controller: dueDateController,
-                          keyboardType: TextInputType.text,
-                          onTap: () async {
-                            DateTime? pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2101),
-                            );
-                            // if (pickedDate != null) {
-                            //   dueDateController.text =
-                            //       DateFormat('yyyy-MM-dd HH:mm:ss')
-                            //           .format(pickedDate);
-
-                            //   showLog(
-                            //       msg:
-                            //           "Current date time ---> ${DateTime.now()}");
-                            //   showLog(
-                            //       msg:
-                            //           "Selected Date: ${dueDateController.text}");
-                            // }
-
-                            if (pickedDate != null) {
-                              final now = DateTime.now();
-
-                              // Combine selected date with current time
-                              final selectedDateTime = DateTime(
-                                pickedDate.year,
-                                pickedDate.month,
-                                pickedDate.day,
-                                now.hour,
-                                now.minute,
-                                now.second,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          FocusManager.instance.primaryFocus?.unfocus();
+          selectedFiles.clear();
+          imageController.capturedImages.clear();
+        }
+      },
+      child: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Add Activity"),
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GlobalTextFormField(
+                            labelText: 'Subject',
+                            controller: titleController,
+                            keyboardType: TextInputType.text,
+                          ),
+                          GlobalTextFormField(
+                            labelText: 'Due Date',
+                            controller: dueDateController,
+                            keyboardType: TextInputType.text,
+                            onTap: () async {
+                              DateTime? pickedDate = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2101),
                               );
+                              // if (pickedDate != null) {
+                              //   dueDateController.text =
+                              //       DateFormat('yyyy-MM-dd HH:mm:ss')
+                              //           .format(pickedDate);
 
-                              dueDateController.text =
-                                  DateFormat('yyyy-MM-dd HH:mm:ss')
-                                      .format(selectedDateTime);
+                              //   showLog(
+                              //       msg:
+                              //           "Current date time ---> ${DateTime.now()}");
+                              //   showLog(
+                              //       msg:
+                              //           "Selected Date: ${dueDateController.text}");
+                              // }
 
-                              showLog(msg: "Current date time ---> $now");
-                              showLog(
-                                  msg:
-                                      "Selected DateTime: ${dueDateController.text}");
-                            }
-                          },
-                        ),
-                        InkWell(
-                          onTap: _openCategoryBottomSheet,
-                          child: GlobalDropdown(
-                            labelText: selectedCategory.text.isEmpty
-                                ? "Select Category"
-                                : selectedCategory.text,
-                            isSelected: selectedCategory.text.isNotEmpty,
-                          ),
-                        ),
-                        GlobalTextFormField(
-                          labelText: 'Description',
-                          controller: descriptionController,
-                          keyboardType: TextInputType.text,
-                          maxLine: 2,
-                        ),
-                        GlobalTextFormField(
-                          labelText: 'Note',
-                          controller: noteController,
-                          keyboardType: TextInputType.text,
-                          maxLine: 2,
-                        ),
-                        InkWell(
-                          onTap: _openOpportunityBottomSheet,
-                          child: GlobalDropdown(
-                            labelText: selectedOpportunity.text.isEmpty
-                                ? "Select Opportunity"
-                                : selectedOpportunity.text,
-                            isSelected: selectedOpportunity.text.isNotEmpty,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: _openContactBottomSheet,
-                          child: GlobalDropdown(
-                            labelText: selectedContacts.text.isEmpty
-                                ? "Select Customer/Contact"
-                                : selectedContacts.text,
-                            isSelected: selectedContacts.text.isNotEmpty,
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            InkWell(
-                              onTap: _openTaskMemberBottomSheet,
-                              child: GlobalDropdown(
-                                labelText: selectedTaskMembers.isNotEmpty
-                                    ? "👥 Assigned to ${selectedTaskMembers.length} ${selectedTaskMembers.length == 1 ? 'member' : 'members'}"
-                                    : "👥 Assign Task Members",
-                                isSelected: selectedTaskMembers.isNotEmpty,
-                              ),
-                            ),
-                            const Gap(8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: selectedTaskMembers.map((member) {
-                                return Chip(
-                                  label: Text(member),
-                                  labelStyle: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(color: Colors.white),
-                                  backgroundColor: Colors.blueAccent,
-                                  avatar: const Icon(Icons.person,
-                                      color: Colors.white, size: 18),
-                                  onDeleted: () {
-                                    setState(() {
-                                      selectedTaskMembers.remove(member);
-                                      selectedTaskMember.text =
-                                          selectedTaskMembers.join(',');
-                                    });
-                                  },
+                              if (pickedDate != null) {
+                                final now = DateTime.now();
+
+                                // Combine selected date with current time
+                                final selectedDateTime = DateTime(
+                                  pickedDate.year,
+                                  pickedDate.month,
+                                  pickedDate.day,
+                                  now.hour,
+                                  now.minute,
+                                  now.second,
                                 );
-                              }).toList(),
-                            )
-                          ],
-                        ),
-                        const Gap(8),
 
-                        if (selectedFiles.isNotEmpty) ...[
-                          const Gap(16),
-                          Text(
-                            "Selected Files:",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const Gap(8),
-                          // ListView.builder(
-                          //   shrinkWrap: true,
-                          //   physics: const NeverScrollableScrollPhysics(),
-                          //   itemCount: selectedFiles.length,
-                          //   itemBuilder: (context, index) {
-                          //     final file = selectedFiles[index];
-                          //     return Card(
-                          //       margin: const EdgeInsets.only(bottom: 8),
-                          //       child: ListTile(
-                          //         leading: const Icon(Icons.insert_drive_file),
-                          //         title: Text(file.path.split('/').last),
-                          //         trailing: IconButton(
-                          //           icon: const Icon(Icons.delete,
-                          //               color: Colors.red),
-                          //           onPressed: () {
-                          //             setState(
-                          //                 () => selectedFiles.removeAt(index));
-                          //           },
-                          //         ),
-                          //       ),
-                          //     );
-                          //   },
-                          // ),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: selectedFiles.length,
-                            itemBuilder: (context, index) {
-                              final file = selectedFiles[index];
-                              final extension =
-                                  file.path.split('.').last.toLowerCase();
+                                dueDateController.text =
+                                    DateFormat('yyyy-MM-dd HH:mm:ss')
+                                        .format(selectedDateTime);
 
-                              Widget thumbnail;
-
-                              // Image file extensions
-                              const imageExtensions = [
-                                'jpg',
-                                'jpeg',
-                                'png',
-                                'gif',
-                                'webp',
-                                'bmp'
-                              ];
-
-                              if (imageExtensions.contains(extension)) {
-                                // Show image preview
-                                thumbnail = Image.file(
-                                  file,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                );
-                              } else if (extension == 'pdf') {
-                                thumbnail = const Icon(Icons.picture_as_pdf,
-                                    color: Colors.red, size: 50);
-                              } else if (['doc', 'docx', 'txt', 'rtf']
-                                  .contains(extension)) {
-                                thumbnail = const Icon(Icons.description,
-                                    color: Colors.blue, size: 50);
-                              } else if (['xls', 'xlsx'].contains(extension)) {
-                                thumbnail = const Icon(Icons.grid_on,
-                                    color: Colors.green, size: 50);
-                              } else {
-                                // Default file icon
-                                thumbnail = const Icon(Icons.insert_drive_file,
-                                    size: 50);
+                                showLog(msg: "Current date time ---> $now");
+                                showLog(
+                                    msg:
+                                        "Selected DateTime: ${dueDateController.text}");
                               }
-
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  leading: thumbnail,
-                                  title: Text(file.path.split('/').last),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () {
-                                      setState(() {
-                                        selectedFiles.removeWhere(
-                                            (f) => f.path == file.path);
-                                        imageController.capturedImages
-                                            .removeWhere((f) => f == file.path);
-                                      });
-                                      showLog(
-                                          msg:
-                                              "Removed file ---> ${file.path}");
-                                      showLog(
-                                          msg:
-                                              "Selected files ---> $selectedFiles");
-                                      showLog(
-                                          msg:
-                                              "Captured images ---> ${imageController.capturedImages}");
-                                    },
-                                  ),
-                                ),
-                              );
                             },
                           ),
+                          InkWell(
+                            onTap: _openCategoryBottomSheet,
+                            child: GlobalDropdown(
+                              labelText: selectedCategory.text.isEmpty
+                                  ? "Select Category"
+                                  : selectedCategory.text,
+                              isSelected: selectedCategory.text.isNotEmpty,
+                            ),
+                          ),
+                          GlobalTextFormField(
+                            labelText: 'Description',
+                            controller: descriptionController,
+                            keyboardType: TextInputType.text,
+                            maxLine: 2,
+                          ),
+                          GlobalTextFormField(
+                            labelText: 'Note',
+                            controller: noteController,
+                            keyboardType: TextInputType.text,
+                            maxLine: 2,
+                          ),
+                          InkWell(
+                            onTap: _openOpportunityBottomSheet,
+                            child: GlobalDropdown(
+                              labelText: selectedOpportunity.text.isEmpty
+                                  ? "Select Opportunity"
+                                  : selectedOpportunity.text,
+                              isSelected: selectedOpportunity.text.isNotEmpty,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: _openContactBottomSheet,
+                            child: GlobalDropdown(
+                              labelText: selectedContacts.text.isEmpty
+                                  ? "Select Customer/Contact"
+                                  : selectedContacts.text,
+                              isSelected: selectedContacts.text.isNotEmpty,
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              InkWell(
+                                onTap: _openTaskMemberBottomSheet,
+                                child: GlobalDropdown(
+                                  labelText: selectedTaskMembers.isNotEmpty
+                                      ? "👥 Assigned to ${selectedTaskMembers.length} ${selectedTaskMembers.length == 1 ? 'member' : 'members'}"
+                                      : "👥 Assign Task Members",
+                                  isSelected: selectedTaskMembers.isNotEmpty,
+                                ),
+                              ),
+                              const Gap(8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: selectedTaskMembers.map((member) {
+                                  return Chip(
+                                    label: Text(member),
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: Colors.white),
+                                    backgroundColor: Colors.blueAccent,
+                                    avatar: const Icon(Icons.person,
+                                        color: Colors.white, size: 18),
+                                    onDeleted: () {
+                                      setState(() {
+                                        selectedTaskMembers.remove(member);
+                                        selectedTaskMember.text =
+                                            selectedTaskMembers.join(',');
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              )
+                            ],
+                          ),
+                          const Gap(8),
+
+                          if (selectedFiles.isNotEmpty) ...[
+                            const Gap(16),
+                            Text(
+                              "Selected Files:",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const Gap(8),
+                            // ListView.builder(
+                            //   shrinkWrap: true,
+                            //   physics: const NeverScrollableScrollPhysics(),
+                            //   itemCount: selectedFiles.length,
+                            //   itemBuilder: (context, index) {
+                            //     final file = selectedFiles[index];
+                            //     return Card(
+                            //       margin: const EdgeInsets.only(bottom: 8),
+                            //       child: ListTile(
+                            //         leading: const Icon(Icons.insert_drive_file),
+                            //         title: Text(file.path.split('/').last),
+                            //         trailing: IconButton(
+                            //           icon: const Icon(Icons.delete,
+                            //               color: Colors.red),
+                            //           onPressed: () {
+                            //             setState(
+                            //                 () => selectedFiles.removeAt(index));
+                            //           },
+                            //         ),
+                            //       ),
+                            //     );
+                            //   },
+                            // ),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: selectedFiles.length,
+                              itemBuilder: (context, index) {
+                                final file = selectedFiles[index];
+                                final extension =
+                                    file.path.split('.').last.toLowerCase();
+
+                                Widget thumbnail;
+
+                                // Image file extensions
+                                const imageExtensions = [
+                                  'jpg',
+                                  'jpeg',
+                                  'png',
+                                  'gif',
+                                  'webp',
+                                  'bmp'
+                                ];
+
+                                if (imageExtensions.contains(extension)) {
+                                  // Show image preview
+                                  thumbnail = Image.file(
+                                    file,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  );
+                                } else if (extension == 'pdf') {
+                                  thumbnail = const Icon(Icons.picture_as_pdf,
+                                      color: Colors.red, size: 50);
+                                } else if (['doc', 'docx', 'txt', 'rtf']
+                                    .contains(extension)) {
+                                  thumbnail = const Icon(Icons.description,
+                                      color: Colors.blue, size: 50);
+                                } else if (['xls', 'xlsx']
+                                    .contains(extension)) {
+                                  thumbnail = const Icon(Icons.grid_on,
+                                      color: Colors.green, size: 50);
+                                } else {
+                                  // Default file icon
+                                  thumbnail = const Icon(
+                                      Icons.insert_drive_file,
+                                      size: 50);
+                                }
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: ListTile(
+                                    leading: thumbnail,
+                                    title: Text(file.path.split('/').last),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () {
+                                        setState(() {
+                                          selectedFiles.removeWhere(
+                                              (f) => f.path == file.path);
+                                          imageController.capturedImages
+                                              .removeWhere(
+                                                  (f) => f == file.path);
+                                        });
+                                        showLog(
+                                            msg:
+                                                "Removed file ---> ${file.path}");
+                                        showLog(
+                                            msg:
+                                                "Selected files ---> $selectedFiles");
+                                        showLog(
+                                            msg:
+                                                "Captured images ---> ${imageController.capturedImages}");
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const Gap(8),
+                          ],
+
+                          // file selection -- doted box
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      showLog(msg: "file picker");
+                                      // await _handleFileSelection();
+                                      await prepareFilesForUpload();
+                                    }, // Trigger the callback function provided.
+                                    child: DottedBorder(
+                                      options:
+                                          const RoundedRectDottedBorderOptions(
+                                              radius: Radius.circular(12)),
+                                      child: Container(
+                                        width: double
+                                            .infinity, // Take full available width.
+                                        height:
+                                            150, // Fixed height for the container.
+                                        decoration: BoxDecoration(
+                                          // color: Colors.grey[
+                                          //     100], // Light background color for the drop zone.
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.cloud_upload_outlined,
+                                              size: 50,
+                                              color: Colors.blue[700],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              "Tap to select a document",
+                                              style: TextStyle(
+                                                color: Colors.grey[800],
+                                                fontSize: 16,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Max file size: 5MB",
+                                              style: TextStyle(
+                                                color: Colors.grey[500],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      showLog(msg: "Capture image");
+
+                                      // Wait until user takes picture
+                                      final capturedImagePath =
+                                          await Navigator.push<String>(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              CameraScreen(cameras: cameras),
+                                        ),
+                                      );
+
+                                      if (capturedImagePath != null) {
+                                        // Only now add to selectedFiles
+                                        await _addCameraImages();
+                                        showLog(
+                                            msg:
+                                                "Camera images added after capture");
+                                        // await prepareFilesForUpload();
+                                      }
+                                    }, // Trigger the callback function provided.
+                                    child: DottedBorder(
+                                      options:
+                                          const RoundedRectDottedBorderOptions(
+                                              radius: Radius.circular(12)),
+                                      child: Container(
+                                        width: double
+                                            .infinity, // Take full available width.
+                                        height:
+                                            150, // Fixed height for the container.
+                                        decoration: BoxDecoration(
+                                          // color: Colors.grey[
+                                          //     100], // Light background color for the drop zone.
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.camera_alt_outlined,
+                                              size: 50,
+                                              color: Colors.blue[700],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              "Take a picture",
+                                              style: TextStyle(
+                                                color: Colors.grey[800],
+                                                fontSize: 16,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            // const SizedBox(height: 4),
+                                            // Text(
+                                            //   "Max file size: 5MB",
+                                            //   style: TextStyle(
+                                            //     color: Colors.grey[500],
+                                            //     fontSize: 12,
+                                            //   ),
+                                            // ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+
+                          const Gap(8),
+                          // Obx(() {
+                          //   if (imageController.capturedImages.isEmpty) {
+                          //     return const SizedBox.shrink();
+                          //   }
+
+                          //   return ListView.builder(
+                          //     shrinkWrap: true,
+                          //     physics: const NeverScrollableScrollPhysics(),
+                          //     itemCount: imageController.capturedImages.length,
+                          //     itemBuilder: (context, index) {
+                          //       final imagePath =
+                          //           imageController.capturedImages[index];
+                          //       return Padding(
+                          //         padding: const EdgeInsets.only(bottom: 8),
+                          //         child: Stack(
+                          //           children: [
+                          //             // Show the image
+                          //             Image.file(
+                          //               File(imagePath),
+                          //               height: 200,
+                          //               width: double.infinity,
+                          //               fit: BoxFit.cover,
+                          //             ),
+
+                          //             // Delete button (top-right corner)
+                          //             Positioned(
+                          //               top: 8,
+                          //               right: 8,
+                          //               child: InkWell(
+                          //                 onTap: () {
+                          //                   setState(() {
+                          //                     selectedFiles.removeWhere(
+                          //                         (f) => f.path == file.path);
+                          //                     imageController.capturedImages
+                          //                         .removeWhere(
+                          //                             (f) => f == file.path);
+                          //                   });
+                          //                   showLog(
+                          //                       msg:
+                          //                           "Removed file ---> ${file.path}");
+                          //                   showLog(
+                          //                       msg:
+                          //                           "Selected files ---> $selectedFiles");
+                          //                   showLog(
+                          //                       msg:
+                          //                           "Captured images ---> ${imageController.capturedImages}");
+                          //                 },
+                          //                 child: Container(
+                          //                   decoration: const BoxDecoration(
+                          //                     color: Colors.black54,
+                          //                     shape: BoxShape.circle,
+                          //                   ),
+                          //                   padding: const EdgeInsets.all(6),
+                          //                   child: const Icon(
+                          //                     Icons.delete,
+                          //                     color: Colors.red,
+                          //                     size: 20,
+                          //                   ),
+                          //                 ),
+                          //               ),
+                          //             ),
+                          //           ],
+                          //         ),
+                          //       );
+                          //     },
+                          //   );
+                          // }),
+
+                          // const Gap(8),
+
+                          // GestureDetector(
+                          //   onTap: () async {
+                          //     showLog(msg: "Capture image");
+
+                          //     // Wait until user takes picture
+                          //     final capturedImagePath =
+                          //         await Navigator.push<String>(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //         builder: (context) =>
+                          //             CameraScreen(cameras: cameras),
+                          //       ),
+                          //     );
+
+                          //     if (capturedImagePath != null) {
+                          //       // Only now add to selectedFiles
+                          //       await _addCameraImages();
+                          //       showLog(msg: "Camera images added after capture");
+                          //       // await prepareFilesForUpload();
+                          //     }
+                          //   }, // Trigger the callback function provided.
+                          //   child: DottedBorder(
+                          //     options: const RoundedRectDottedBorderOptions(
+                          //         radius: Radius.circular(12)),
+                          //     child: Container(
+                          //       width:
+                          //           double.infinity, // Take full available width.
+                          //       height: 150, // Fixed height for the container.
+                          //       decoration: BoxDecoration(
+                          //         // color: Colors.grey[
+                          //         //     100], // Light background color for the drop zone.
+                          //         borderRadius: BorderRadius.circular(12),
+                          //       ),
+                          //       child: Column(
+                          //         mainAxisAlignment: MainAxisAlignment.center,
+                          //         children: [
+                          //           Icon(
+                          //             Icons.camera_alt_outlined,
+                          //             size: 50,
+                          //             color: Colors.blue[700],
+                          //           ),
+                          //           const SizedBox(height: 12),
+                          //           Text(
+                          //             "Take a picture",
+                          //             style: TextStyle(
+                          //               color: Colors.grey[800],
+                          //               fontSize: 16,
+                          //             ),
+                          //             textAlign: TextAlign.center,
+                          //           ),
+                          //           // const SizedBox(height: 4),
+                          //           // Text(
+                          //           //   "Max file size: 5MB",
+                          //           //   style: TextStyle(
+                          //           //     color: Colors.grey[500],
+                          //           //     fontSize: 12,
+                          //           //   ),
+                          //           // ),
+                          //         ],
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
+
                           const Gap(8),
                         ],
-
-                        // file selection -- doted box
-                        GestureDetector(
-                          onTap: () async {
-                            showLog(msg: "file picker");
-                            // await _handleFileSelection();
-                            await prepareFilesForUpload();
-                          }, // Trigger the callback function provided.
-                          child: DottedBorder(
-                            options: const RoundedRectDottedBorderOptions(
-                                radius: Radius.circular(12)),
-                            child: Container(
-                              width:
-                                  double.infinity, // Take full available width.
-                              height: 150, // Fixed height for the container.
-                              decoration: BoxDecoration(
-                                // color: Colors.grey[
-                                //     100], // Light background color for the drop zone.
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.cloud_upload_outlined,
-                                    size: 50,
-                                    color: Colors.blue[700],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    "Tap to select a document",
-                                    style: TextStyle(
-                                      color: Colors.grey[800],
-                                      fontSize: 16,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Max file size: 5MB",
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const Gap(8),
-                        // Obx(() {
-                        //   if (imageController.capturedImages.isEmpty) {
-                        //     return const SizedBox.shrink();
-                        //   }
-
-                        //   return ListView.builder(
-                        //     shrinkWrap: true,
-                        //     physics: const NeverScrollableScrollPhysics(),
-                        //     itemCount: imageController.capturedImages.length,
-                        //     itemBuilder: (context, index) {
-                        //       final imagePath =
-                        //           imageController.capturedImages[index];
-                        //       return Padding(
-                        //         padding: const EdgeInsets.only(bottom: 8),
-                        //         child: Stack(
-                        //           children: [
-                        //             // Show the image
-                        //             Image.file(
-                        //               File(imagePath),
-                        //               height: 200,
-                        //               width: double.infinity,
-                        //               fit: BoxFit.cover,
-                        //             ),
-
-                        //             // Delete button (top-right corner)
-                        //             Positioned(
-                        //               top: 8,
-                        //               right: 8,
-                        //               child: InkWell(
-                        //                 onTap: () {
-                        //                   setState(() {
-                        //                     selectedFiles.removeWhere(
-                        //                         (f) => f.path == file.path);
-                        //                     imageController.capturedImages
-                        //                         .removeWhere(
-                        //                             (f) => f == file.path);
-                        //                   });
-                        //                   showLog(
-                        //                       msg:
-                        //                           "Removed file ---> ${file.path}");
-                        //                   showLog(
-                        //                       msg:
-                        //                           "Selected files ---> $selectedFiles");
-                        //                   showLog(
-                        //                       msg:
-                        //                           "Captured images ---> ${imageController.capturedImages}");
-                        //                 },
-                        //                 child: Container(
-                        //                   decoration: const BoxDecoration(
-                        //                     color: Colors.black54,
-                        //                     shape: BoxShape.circle,
-                        //                   ),
-                        //                   padding: const EdgeInsets.all(6),
-                        //                   child: const Icon(
-                        //                     Icons.delete,
-                        //                     color: Colors.red,
-                        //                     size: 20,
-                        //                   ),
-                        //                 ),
-                        //               ),
-                        //             ),
-                        //           ],
-                        //         ),
-                        //       );
-                        //     },
-                        //   );
-                        // }),
-
-                        const Gap(8),
-
-                        GestureDetector(
-                          onTap: () async {
-                            showLog(msg: "Capture image");
-
-                            // Wait until user takes picture
-                            final capturedImagePath =
-                                await Navigator.push<String>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    CameraScreen(cameras: cameras),
-                              ),
-                            );
-
-                            if (capturedImagePath != null) {
-                              // Only now add to selectedFiles
-                              await _addCameraImages();
-                              showLog(msg: "Camera images added after capture");
-                              // await prepareFilesForUpload();
-                            }
-                          }, // Trigger the callback function provided.
-                          child: DottedBorder(
-                            options: const RoundedRectDottedBorderOptions(
-                                radius: Radius.circular(12)),
-                            child: Container(
-                              width:
-                                  double.infinity, // Take full available width.
-                              height: 150, // Fixed height for the container.
-                              decoration: BoxDecoration(
-                                // color: Colors.grey[
-                                //     100], // Light background color for the drop zone.
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.camera_alt_outlined,
-                                    size: 50,
-                                    color: Colors.blue[700],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    "Take a picture",
-                                    style: TextStyle(
-                                      color: Colors.grey[800],
-                                      fontSize: 16,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  // const SizedBox(height: 4),
-                                  // Text(
-                                  //   "Max file size: 5MB",
-                                  //   style: TextStyle(
-                                  //     color: Colors.grey[500],
-                                  //     fontSize: 12,
-                                  //   ),
-                                  // ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const Gap(8),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : GlobalButton(
-                        text: "Submit",
-                        onPressed: _startTracking,
-                        // onPressed: _uploadDocument,
-                      ),
-              ],
+                  isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : GlobalButton(
+                          text: "Submit",
+                          onPressed: _startTracking,
+                          // onPressed: _uploadDocument,
+                        ),
+                ],
+              ),
             ),
           ),
         ),
