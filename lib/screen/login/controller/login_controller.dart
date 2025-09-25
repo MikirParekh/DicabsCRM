@@ -4,7 +4,6 @@ import 'package:dicabs/ALLURL.dart';
 import 'package:dicabs/SharedPreference.dart';
 import 'package:dicabs/background_service.dart';
 import 'package:dicabs/core/show_log.dart';
-import 'package:dicabs/service/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dicabs/validator/validator.dart';

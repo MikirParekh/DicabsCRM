@@ -18,6 +18,9 @@ Future<void> main() async {
   // Lock orientation and launch app
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  // Obtain a list of the available cameras on the device.
+  // final cameras = await availableCameras();
+
   // await requestLocationPermissions(); // now asking after login
   // await initializeService();
 

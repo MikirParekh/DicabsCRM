@@ -180,6 +180,7 @@ class MainPageRepository {
     required String longitude,
   }) async {
     final url = Uri.parse('http://180.211.118.210:90/api/Home/v1/Location');
+    // final url = Uri.parse('http://192.168.3.50:89/api/Home/v1/Location');
 
     final entryDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
@@ -201,7 +202,7 @@ class MainPageRepository {
         body: jsonEncode(body),
       );
 
-      // showLog(msg: "post location response ---> ${response.body}");
+      showLog(msg: "post location response ---> ${response.body}");
 
       if (response.statusCode == 200) {
         final responseJson = jsonDecode(response.body);

@@ -1,16 +1,19 @@
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:dicabs/core/show_log.dart';
 import 'package:dicabs/customewidget/global_dropdown.dart';
 import 'package:dicabs/customewidget/global_text_field.dart';
+import 'package:dicabs/screen/mainpage/controller/image_controller.dart';
+import 'package:dicabs/screen/mainpage/ui/camera_screen.dart';
 import 'package:dicabs/screen/mainpage/widgets/category_bottom_view.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../customewidget/global_button.dart';
@@ -43,6 +46,8 @@ class _MainPageState extends State<MainPage> {
   List<AddActivityList> filteredData = [];
   final MethodChannel platform =
       const MethodChannel('com.uniqtech.dicabs/tracking');
+
+  final ImageController imageController = Get.put(ImageController());
 
   bool isLoading = false;
   List<String> selectedTaskMembers = [];
@@ -231,7 +236,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-// --- File Selection and Processing ---
+  // --- File Selection and Processing ---
   Future<void> _handleFileSelection() async {
     // 1. Pick files
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -240,10 +245,10 @@ class _MainPageState extends State<MainPage> {
       type: FileType.custom,
       allowedExtensions: [
         // Images
-        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+        'jpg', 'jpeg', 'png', 'webp',
 
         // Documents
-        'pdf', 'doc', 'docx', 'txt', 'rtf',
+        'pdf', 'doc', 'docx', 'txt',
 
         // Excel
         'xls', 'xlsx'
@@ -267,7 +272,17 @@ class _MainPageState extends State<MainPage> {
     }
 
     // 2. Process the results and convert to File objects
-    selectedFiles = await _processFileFilePickerResult(result);
+    // selectedFiles = await _processFileFilePickerResult(result);
+
+    // Process picked files
+    final pickedFiles = await _processFileFilePickerResult(result);
+
+    // Combine with already added files (camera)
+    for (var file in pickedFiles) {
+      if (selectedFiles.length < 5 && !selectedFiles.contains(file)) {
+        selectedFiles.add(file);
+      }
+    }
 
     // 3. Now you have a list of usable File objects for upload
     showLog(msg: "Number of files ready for upload: ${selectedFiles.length}");
@@ -275,6 +290,20 @@ class _MainPageState extends State<MainPage> {
       showLog(msg: "File path: ${file.path}");
     }
     setState(() {});
+  }
+
+  Future<void> prepareFilesForUpload() async {
+    // Clear old list first
+    selectedFiles.clear();
+
+    // Add camera images first
+    await _addCameraImages();
+
+    // If user also picks files, combine them
+    await _handleFileSelection();
+
+    // Now selectedFiles contains camera + picked files (max 5)
+    showLog(msg: "✅ Final files for upload ---> $selectedFiles");
   }
 
   ///upload document
@@ -335,6 +364,25 @@ class _MainPageState extends State<MainPage> {
         ),
       );
     }
+  }
+
+  /// Add captured images from camera to selectedFiles
+  Future<void> _addCameraImages() async {
+    try {
+      for (var path in imageController.capturedImages) {
+        final file = File(path);
+        // Only add if we haven't reached max 5
+        if (selectedFiles.length < 5 && !selectedFiles.contains(file)) {
+          selectedFiles.add(file);
+        }
+      }
+      showLog(msg: "✅ Camera images added ---> $selectedFiles");
+
+      // await prepareFilesForUpload();
+    } catch (e) {
+      showLog(msg: "Error adding captured images: $e");
+    }
+    setState(() {});
   }
 
   /// Converts FilePickerResult to a List<File>, handling cloud files by saving them temporarily.
@@ -409,11 +457,18 @@ class _MainPageState extends State<MainPage> {
     return processedFiles;
   }
 
+  List<CameraDescription> cameras = [];
+
   @override
   void initState() {
     super.initState();
     // Initialize selectedTaskMember.text if needed, e.g., from a saved state
     selectedTaskMember.text = selectedTaskMembers.join(',');
+
+    // Obtain a list of the available cameras on the device.
+    availableCameras().then((availableCameras) {
+      setState(() => cameras = availableCameras);
+    });
   }
 
   @override
@@ -575,23 +630,98 @@ class _MainPageState extends State<MainPage> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const Gap(8),
+                          // ListView.builder(
+                          //   shrinkWrap: true,
+                          //   physics: const NeverScrollableScrollPhysics(),
+                          //   itemCount: selectedFiles.length,
+                          //   itemBuilder: (context, index) {
+                          //     final file = selectedFiles[index];
+                          //     return Card(
+                          //       margin: const EdgeInsets.only(bottom: 8),
+                          //       child: ListTile(
+                          //         leading: const Icon(Icons.insert_drive_file),
+                          //         title: Text(file.path.split('/').last),
+                          //         trailing: IconButton(
+                          //           icon: const Icon(Icons.delete,
+                          //               color: Colors.red),
+                          //           onPressed: () {
+                          //             setState(
+                          //                 () => selectedFiles.removeAt(index));
+                          //           },
+                          //         ),
+                          //       ),
+                          //     );
+                          //   },
+                          // ),
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: selectedFiles.length,
                             itemBuilder: (context, index) {
                               final file = selectedFiles[index];
+                              final extension =
+                                  file.path.split('.').last.toLowerCase();
+
+                              Widget thumbnail;
+
+                              // Image file extensions
+                              const imageExtensions = [
+                                'jpg',
+                                'jpeg',
+                                'png',
+                                'gif',
+                                'webp',
+                                'bmp'
+                              ];
+
+                              if (imageExtensions.contains(extension)) {
+                                // Show image preview
+                                thumbnail = Image.file(
+                                  file,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                );
+                              } else if (extension == 'pdf') {
+                                thumbnail = const Icon(Icons.picture_as_pdf,
+                                    color: Colors.red, size: 50);
+                              } else if (['doc', 'docx', 'txt', 'rtf']
+                                  .contains(extension)) {
+                                thumbnail = const Icon(Icons.description,
+                                    color: Colors.blue, size: 50);
+                              } else if (['xls', 'xlsx'].contains(extension)) {
+                                thumbnail = const Icon(Icons.grid_on,
+                                    color: Colors.green, size: 50);
+                              } else {
+                                // Default file icon
+                                thumbnail = const Icon(Icons.insert_drive_file,
+                                    size: 50);
+                              }
+
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 child: ListTile(
-                                  leading: const Icon(Icons.insert_drive_file),
+                                  leading: thumbnail,
                                   title: Text(file.path.split('/').last),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.delete,
                                         color: Colors.red),
                                     onPressed: () {
-                                      setState(
-                                          () => selectedFiles.removeAt(index));
+                                      setState(() {
+                                        selectedFiles.removeWhere(
+                                            (f) => f.path == file.path);
+                                        imageController.capturedImages
+                                            .removeWhere((f) => f == file.path);
+                                      });
+                                      showLog(
+                                          msg:
+                                              "Removed file ---> ${file.path}");
+                                      showLog(
+                                          msg:
+                                              "Selected files ---> $selectedFiles");
+                                      showLog(
+                                          msg:
+                                              "Captured images ---> ${imageController.capturedImages}");
                                     },
                                   ),
                                 ),
@@ -605,7 +735,8 @@ class _MainPageState extends State<MainPage> {
                         GestureDetector(
                           onTap: () async {
                             showLog(msg: "file picker");
-                            await _handleFileSelection();
+                            // await _handleFileSelection();
+                            await prepareFilesForUpload();
                           }, // Trigger the callback function provided.
                           child: DottedBorder(
                             options: const RoundedRectDottedBorderOptions(
@@ -644,6 +775,141 @@ class _MainPageState extends State<MainPage> {
                                       fontSize: 12,
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const Gap(8),
+                        // Obx(() {
+                        //   if (imageController.capturedImages.isEmpty) {
+                        //     return const SizedBox.shrink();
+                        //   }
+
+                        //   return ListView.builder(
+                        //     shrinkWrap: true,
+                        //     physics: const NeverScrollableScrollPhysics(),
+                        //     itemCount: imageController.capturedImages.length,
+                        //     itemBuilder: (context, index) {
+                        //       final imagePath =
+                        //           imageController.capturedImages[index];
+                        //       return Padding(
+                        //         padding: const EdgeInsets.only(bottom: 8),
+                        //         child: Stack(
+                        //           children: [
+                        //             // Show the image
+                        //             Image.file(
+                        //               File(imagePath),
+                        //               height: 200,
+                        //               width: double.infinity,
+                        //               fit: BoxFit.cover,
+                        //             ),
+
+                        //             // Delete button (top-right corner)
+                        //             Positioned(
+                        //               top: 8,
+                        //               right: 8,
+                        //               child: InkWell(
+                        //                 onTap: () {
+                        //                   setState(() {
+                        //                     selectedFiles.removeWhere(
+                        //                         (f) => f.path == file.path);
+                        //                     imageController.capturedImages
+                        //                         .removeWhere(
+                        //                             (f) => f == file.path);
+                        //                   });
+                        //                   showLog(
+                        //                       msg:
+                        //                           "Removed file ---> ${file.path}");
+                        //                   showLog(
+                        //                       msg:
+                        //                           "Selected files ---> $selectedFiles");
+                        //                   showLog(
+                        //                       msg:
+                        //                           "Captured images ---> ${imageController.capturedImages}");
+                        //                 },
+                        //                 child: Container(
+                        //                   decoration: const BoxDecoration(
+                        //                     color: Colors.black54,
+                        //                     shape: BoxShape.circle,
+                        //                   ),
+                        //                   padding: const EdgeInsets.all(6),
+                        //                   child: const Icon(
+                        //                     Icons.delete,
+                        //                     color: Colors.red,
+                        //                     size: 20,
+                        //                   ),
+                        //                 ),
+                        //               ),
+                        //             ),
+                        //           ],
+                        //         ),
+                        //       );
+                        //     },
+                        //   );
+                        // }),
+
+                        const Gap(8),
+
+                        GestureDetector(
+                          onTap: () async {
+                            showLog(msg: "Capture image");
+
+                            // Wait until user takes picture
+                            final capturedImagePath =
+                                await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CameraScreen(cameras: cameras),
+                              ),
+                            );
+
+                            if (capturedImagePath != null) {
+                              // Only now add to selectedFiles
+                              await _addCameraImages();
+                              showLog(msg: "Camera images added after capture");
+                              // await prepareFilesForUpload();
+                            }
+                          }, // Trigger the callback function provided.
+                          child: DottedBorder(
+                            options: const RoundedRectDottedBorderOptions(
+                                radius: Radius.circular(12)),
+                            child: Container(
+                              width:
+                                  double.infinity, // Take full available width.
+                              height: 150, // Fixed height for the container.
+                              decoration: BoxDecoration(
+                                // color: Colors.grey[
+                                //     100], // Light background color for the drop zone.
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.camera_alt_outlined,
+                                    size: 50,
+                                    color: Colors.blue[700],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    "Take a picture",
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontSize: 16,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  // const SizedBox(height: 4),
+                                  // Text(
+                                  //   "Max file size: 5MB",
+                                  //   style: TextStyle(
+                                  //     color: Colors.grey[500],
+                                  //     fontSize: 12,
+                                  //   ),
+                                  // ),
                                 ],
                               ),
                             ),

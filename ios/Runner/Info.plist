@@ -36,6 +36,10 @@
 	<string>This app uses notifications to inform you.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take and share photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access to record videos with sound.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
